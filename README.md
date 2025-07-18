@@ -58,6 +58,15 @@ https://github.com/user-attachments/assets/f6095d26-2b79-4ef7-a889-fd6be27bbbda
    python --version
    ```
 
+**Note for Windows users**: If you encounter build errors with `sentencepiece` on Python 3.13, try using Python 3.11 or 3.12 instead, as they have better compatibility with compiled dependencies:
+
+```bash 
+# Install and use Python 3.11 with uv
+uv python install 3.11
+uv venv --python 3.11
+uv sync
+```
+
 2. **Install uv**: A fast Python package installer and resolver.
    ```bash
    pip install uv
