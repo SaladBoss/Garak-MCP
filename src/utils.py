@@ -1,5 +1,12 @@
 import requests
 import subprocess
+import os
+
+def sanitize_output(text: str) -> str:
+    """
+    Remove non-ASCII characters (including emojis) from a string.
+    """
+    return ''.join(c for c in text if ord(c) < 128)
 
 def get_installed_ollama_models():
     """
@@ -8,8 +15,9 @@ def get_installed_ollama_models():
     Returns:
         list: A list of installed model names
     """
+    tags_url = os.getenv("OLLAMA_TAGS_URL", os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/generate").replace("/api/generate", "/api/tags"))
     try:
-        response = requests.get('http://localhost:11434/api/tags')
+        response = requests.get(tags_url)
         response.raise_for_status()  # Raise an exception for bad status codes
         data = response.json()
         return [model['name'] for model in data.get('models', [])]
@@ -25,41 +33,29 @@ def get_terminal_commands_output(command: list[str]):
         tuple: A tuple containing (output_lines, process_id)
     """
     try:
-        # Run the command and capture both stdout and stderr
+        # Use shell=True for Windows compatibility
         process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            bufsize=1,  # Line buffered
+            shell=True,
             universal_newlines=True
         )
         
         print(f"Process ID: {process.pid}")
         
-        # Read output in real-time
+        # Read all output at once to avoid deadlocks
+        stdout, stderr = process.communicate()
         output_lines = []
-        while True:
-            line = process.stdout.readline()
-            if not line and process.poll() is not None:
-                break
-            if line:
-                line = line.strip()
-                if line:  # Only add non-empty lines
-                    output_lines.append(line)
-                    print(line)  # Print output in real-time
-        
-        # Get any remaining output
-        remaining_output, stderr = process.communicate()
-        if remaining_output:
-            lines = [line.strip() for line in remaining_output.split('\n') if line.strip()]
+        if stdout:
+            lines = [sanitize_output(line.strip()) for line in stdout.split('\n') if line.strip()]
             output_lines.extend(lines)
             for line in lines:
                 print(line)
-        
         if stderr:
-            print(f"Error output: {stderr}")
-            
+            print(f"Error output: {sanitize_output(stderr)}")
+        
         return output_lines, process.pid
     except subprocess.SubprocessError as e:
         print(f"Error running command {command}: {e}")
@@ -77,9 +73,10 @@ def generate_ollama_response(model: str, prompt: str) -> str:
     Returns:
         str: The model's response
     """
+    api_url = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/generate")
     try:
         response = requests.post(
-            "http://localhost:11434/api/generate",
+            api_url,
             json={
                 "model": model,
                 "prompt": prompt,
@@ -87,7 +84,7 @@ def generate_ollama_response(model: str, prompt: str) -> str:
             }
         )
         response.raise_for_status()
-        return response.json()["response"]
+        return sanitize_output(response.json()["response"])
     except requests.exceptions.RequestException as e:
         print(f"Error generating response from Ollama: {e}")
         return ""
