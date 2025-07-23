@@ -33,9 +33,14 @@ def get_terminal_commands_output(command: list[str]):
         tuple: A tuple containing (output_lines, process_id)
     """
     try:
+        # Print environment for debugging
+        # print("[DEBUG] Environment variables before subprocess:")
+        # for k, v in os.environ.items():
+        #     print(f"{k}={v}")
         # Use shell=True for Windows compatibility
         process = subprocess.Popen(
-            command,
+            " ".join(command),
+            # command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -46,7 +51,7 @@ def get_terminal_commands_output(command: list[str]):
         print(f"Process ID: {process.pid}")
         
         # Read all output at once to avoid deadlocks
-        stdout, stderr = process.communicate()
+        stdout, stderr = process.communicate(timeout=120)
         output_lines = []
         if stdout:
             lines = [sanitize_output(line.strip()) for line in stdout.split('\n') if line.strip()]
