@@ -2,6 +2,8 @@
 
 A lightweight MCP (Model Context Protocol) server for Garak.
 
+Tested with **Garak 0.12**.
+
 Example:
 
 https://github.com/user-attachments/assets/f6095d26-2b79-4ef7-a889-fd6be27bbbda
