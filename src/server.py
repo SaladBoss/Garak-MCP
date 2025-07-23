@@ -15,42 +15,34 @@ os.makedirs(REPORT_PREFIX, exist_ok=True)
 class GarakServer:
 
     def __init__(self):
+        from src.config import ModelConfig
         self.model_types = {
             "ollama": "rest",
             "huggingface": "huggingface",
             "openai": "openai",
-            "ggml": "ggml"
+            "ggml": "ggml",
+            "custom_rest": "rest"
         }
-        self.ollama_api_url = "http://localhost:11434/api/generate"
         self.config = ModelConfig()
 
-
-    def _get_generator_options_file(self, model_name: str) -> str:
+    def _get_generator_options_file(self, model_name: str, api_url: str = None, api_key: str = None) -> str:
         """
-        Create a temporary config file with the model name set.
-        
-        Args:
-            model_name (str): The name of the model to use
-            
-        Returns:
-            str: Path to the temporary config file
+        Create a temporary config file with the model name and optionally a custom API URL and key set.
         """
-        # Load the base config
+        import json, tempfile, os
         config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'ollama.json')
-      
         with open(config_path, 'r') as f:
             config = json.load(f)
-        
-        # Set the model name
         config['rest']['RestGenerator']['req_template_json_object']['model'] = model_name
-        
-        # Create a temporary file
+        if api_url:
+            config['rest']['RestGenerator']['uri'] = api_url
+        if api_key:
+            config['rest']['RestGenerator']['headers'] = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
         temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
         json.dump(config, temp_file)
         temp_file.close()
-        
         return temp_file.name
-    
+
     def list_garak_probes(self):
         """
         List all available Garak attacks.
@@ -70,7 +62,7 @@ class GarakServer:
             list: A list of vulnerabilities.
         """
         if model_type == "ollama":
-            config_file = self._get_generator_options_file(model_name)
+            config_file = self._get_generator_options_file(model_name, api_url=self.config.ollama_api_url)
             try:
                 return get_terminal_commands_output([
                     'garak',
@@ -85,6 +77,25 @@ class GarakServer:
                 ])
             finally:
                 # Clean up the temporary file
+                if os.path.exists(config_file):
+                    os.unlink(config_file)
+        elif model_type == "custom_rest":
+            api_url = self.config.custom_rest_api_url
+            api_key = self.config.custom_rest_api_key
+            config_file = self._get_generator_options_file(model_name, api_url=api_url, api_key=api_key)
+            try:
+                return get_terminal_commands_output([
+                    'garak',
+                    '--model_type', 'rest',
+                    '--generator_option_file', config_file,
+                    '--probes', probe_name,
+                    '--report_prefix', REPORT_PREFIX,
+                    "--generations", "1",
+                    "--config", "fast",
+                    "--parallel_attempts", str(self.config.parallel_attempts),
+                    "-v"
+                ])
+            finally:
                 if os.path.exists(config_file):
                     os.unlink(config_file)
         else:
