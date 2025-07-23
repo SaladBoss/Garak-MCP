@@ -9,11 +9,14 @@ load_dotenv()
 
 class ModelConfig:
     def __init__(self):
-        self.parallel_attempts = 1  # Default value
+        self.parallel_attempts = int(os.getenv("PARALLEL_ATTEMPTS", "1"))
+        self.ollama_api_url = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/generate")
+        self.custom_rest_api_url = os.getenv("CUSTOM_REST_API_URL")
+        self.custom_rest_api_key = os.getenv("CUSTOM_REST_API_KEY")
         self.model_types = {
             "ollama": {
                 "type": "rest",
-                "api_url": "http://localhost:11434/api/generate",
+                "api_url": self.ollama_api_url,
                 "models": self._get_ollama_models
             },
             "openai": {
@@ -29,13 +32,19 @@ class ModelConfig:
             "ggml": {
                 "type": "ggml",
                 "models": self._get_ggml_models
+            },
+            "custom_rest": {
+                "type": "rest",
+                "api_url": self.custom_rest_api_url,
+                "api_key": self.custom_rest_api_key,
+                "models": self._get_custom_rest_models
             }
         }
 
     def _get_ollama_models(self) -> List[str]:
         """Get list of installed Ollama models"""
         try:
-            response = requests.get('http://localhost:11434/api/tags')
+            response = requests.get(os.getenv("OLLAMA_TAGS_URL", "http://localhost:11434/api/tags"))
             response.raise_for_status()
             data = response.json()
             return [model['name'] for model in data.get('models', [])]
@@ -57,6 +66,32 @@ class ModelConfig:
         """Get list of configured GGML models"""
         models = os.getenv("GGML_MODELS", "").split(",")
         return [model.strip() for model in models if model.strip()]
+
+    def _get_custom_rest_models(self) -> List[str]:
+        """
+        Get list of models from a custom REST endpoint, if supported (e.g., OpenAI-compatible /v1/models).
+        """
+        api_url = self.custom_rest_api_url
+        api_key = self.custom_rest_api_key
+        if not api_url:
+            return []
+        try:
+            # Try OpenAI-compatible /v1/models endpoint
+            headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+            response = requests.get(api_url.rstrip("/ ") + "/v1/models", headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, dict) and "data" in data:
+                    return [m["id"] for m in data["data"]]
+                elif isinstance(data, list):
+                    return [m["id"] for m in data]
+            # Fallback: return a single model if specified in env
+            model = os.getenv("CUSTOM_REST_MODEL")
+            return [model] if model else []
+        except Exception as e:
+            print(f"Error fetching custom REST models: {e}")
+            model = os.getenv("CUSTOM_REST_MODEL")
+            return [model] if model else []
 
     def set_parallel_attempts(self, attempts: int):
         """
