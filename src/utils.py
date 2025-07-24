@@ -1,6 +1,7 @@
 import requests
 import subprocess
 import os
+import logging
 
 def sanitize_output(text: str) -> str:
     """
@@ -22,7 +23,7 @@ def get_installed_ollama_models():
         data = response.json()
         return [model['name'] for model in data.get('models', [])]
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching Ollama models: {e}")
+        logging.error(f"Error fetching Ollama models: {e}")
         return []
 
 def get_terminal_commands_output(command: list[str]):
@@ -48,22 +49,22 @@ def get_terminal_commands_output(command: list[str]):
             universal_newlines=True
         )
         
-        print(f"Process ID: {process.pid}")
+        logging.info(f"Process ID: {process.pid}")
         
         # Read all output at once to avoid deadlocks
-        stdout, stderr = process.communicate(timeout=120)
+        stdout, stderr = process.communicate()
         output_lines = []
         if stdout:
             lines = [sanitize_output(line.strip()) for line in stdout.split('\n') if line.strip()]
             output_lines.extend(lines)
             for line in lines:
-                print(line)
+                logging.info(line)
         if stderr:
-            print(f"Error output: {sanitize_output(stderr)}")
+            logging.error(f"Error output: {sanitize_output(stderr)}")
         
         return output_lines, process.pid
     except subprocess.SubprocessError as e:
-        print(f"Error running command {command}: {e}")
+        logging.error(f"Error running command {command}: {e}")
         return [], None
 
 
@@ -91,14 +92,14 @@ def generate_ollama_response(model: str, prompt: str) -> str:
         response.raise_for_status()
         return sanitize_output(response.json()["response"])
     except requests.exceptions.RequestException as e:
-        print(f"Error generating response from Ollama: {e}")
+        logging.error(f"Error generating response from Ollama: {e}")
         return ""
 
 
 if __name__ == "__main__":
     
-    print("\nAvailable Garak probes:")
+    logging.info("\nAvailable Garak probes:")
     probes, pid = get_terminal_commands_output(['garak', '--list_probes'])
-    print(f"Process ID: {pid}")
+    logging.info(f"Process ID: {pid}")
     for probe in probes:
-        print(f"- {probe}") 
+        logging.info(f"- {probe}")

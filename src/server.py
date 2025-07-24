@@ -6,8 +6,6 @@ import json
 import tempfile
 import os
 
-
-
 REPORT_PREFIX = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "output")), "output")
 
 os.makedirs(REPORT_PREFIX, exist_ok=True)
@@ -24,6 +22,7 @@ class GarakServer:
             "custom_rest": "rest"
         }
         self.config = ModelConfig()
+        self._cached_probes = None
 
     def _get_generator_options_file(self, model_name: str, api_url: str = None, api_key: str = None) -> str:
         """
@@ -47,7 +46,11 @@ class GarakServer:
         """
         List all available Garak attacks.
         """
-        return get_terminal_commands_output(['garak', '--list_probes'])
+        if self._cached_probes is not None:
+            return self._cached_probes, None
+        lines, _ = get_terminal_commands_output(['garak', '--list_probes'])
+        self._cached_probes = (lines, None)
+        return self._cached_probes
 
     def run_attack(self, model_type: str, model_name: str, probe_name: str):
         """
@@ -112,8 +115,7 @@ class GarakServer:
             ])
 
 # MCP Server
-mcp = FastMCP("Garak MCP Server")
-
+mcp = FastMCP("garakmcp")
 
 @mcp.tool()
 def list_model_types():
@@ -124,7 +126,6 @@ def list_model_types():
         list[str]: A list of available model types.
     """
     return list(GarakServer().model_types.keys())
-
 
 @mcp.tool()
 def list_models(model_type: str) -> list[str]:
@@ -146,9 +147,16 @@ def list_garak_probes():
     List all available Garak attacks.
 
     Returns:
-        list: A list of available probes / attacks.
+        dict: A dictionary with a 'content' key containing a list of probe names as dicts.
     """
-    return GarakServer().list_garak_probes()
+    lines, _ = GarakServer().list_garak_probes()
+    probes = []
+    for line in lines:
+        if line.startswith("probes: "):
+            probe = line[len("probes: "):].strip()
+            if probe:
+                probes.append({"type": "text", "text": probe})
+    return {"content": probes, "isError": False}
 
 @mcp.tool()
 def get_report():
@@ -174,5 +182,3 @@ def run_attack(model_type: str, model_name: str, probe_name: str):
         list: A list of vulnerabilities.
     """
     return GarakServer().run_attack(model_type, model_name, probe_name)
-
-

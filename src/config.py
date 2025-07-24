@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import requests
 import subprocess
 from typing import Dict, List, Optional
+import logging
 
 # Load environment variables
 load_dotenv()
@@ -49,7 +50,7 @@ class ModelConfig:
             data = response.json()
             return [model['name'] for model in data.get('models', [])]
         except requests.exceptions.RequestException as e:
-            print(f"Error fetching Ollama models: {e}")
+            logging.error(f"Error fetching Ollama models: {e}")
             return []
 
     def _get_openai_models(self) -> List[str]:
@@ -89,7 +90,7 @@ class ModelConfig:
             model = os.getenv("CUSTOM_REST_MODEL")
             return [model] if model else []
         except Exception as e:
-            print(f"Error fetching custom REST models: {e}")
+            logging.error(f"Error fetching custom REST models: {e}")
             model = os.getenv("CUSTOM_REST_MODEL")
             return [model] if model else []
 
@@ -154,7 +155,9 @@ class ModelConfig:
 
 if __name__ == "__main__":
     config = ModelConfig()
-    print(config.list_models("ollama"))
-    print(config.list_models("openai"))
-    print(config.list_models("huggingface"))
-    print(config.list_models("ggml"))
+
+    logging.basicConfig(level=logging.INFO)
+    logging.info(config.list_models("ollama"))
+    logging.info(config.list_models("openai"))
+    logging.info(config.list_models("huggingface"))
+    logging.info(config.list_models("ggml"))
