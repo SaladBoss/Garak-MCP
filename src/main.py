@@ -1,7 +1,11 @@
+import asyncio
 import os
-from .server import mcp
+import uvicorn
+from server import mcp
 
-def main():
+app = mcp.streamable_http_app()
+
+if __name__ == "__main__":
     """Run the MCP server."""
     os.environ["PYTHONUTF8"] = "1"
     os.environ["PYTHONIOENCODING"] = "utf-8"
@@ -10,10 +14,7 @@ def main():
 
     import logging
     logging.info("Starting Garak MCP server!")
+
     # Run the server
-    mcp.run()
-
-    # mcp.run(transport="http", host="127.0.0.1", port=5000, path="/mcp")
-
-if __name__ == "__main__":
-    main()
+    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
+    # asyncio.run(main())

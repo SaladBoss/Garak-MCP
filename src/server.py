@@ -1,7 +1,7 @@
 from mcp.server.fastmcp import FastMCP
 import requests
-from src.utils import get_terminal_commands_output
-from src.config import ModelConfig
+from utils import get_terminal_commands_output
+from config import ModelConfig
 import json
 import tempfile
 import os
@@ -11,9 +11,7 @@ REPORT_PREFIX = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file
 os.makedirs(REPORT_PREFIX, exist_ok=True)
 
 class GarakServer:
-
     def __init__(self):
-        from src.config import ModelConfig
         self.model_types = {
             "ollama": "rest",
             "huggingface": "huggingface",
@@ -24,7 +22,7 @@ class GarakServer:
         self.config = ModelConfig()
         self._cached_probes = None
 
-    def _get_generator_options_file(self, model_name: str, api_url: str = None, api_key: str = None) -> str:
+    def _get_generator_options_file(self, model_name: str, api_url: str | None = None, api_key: str | None = None) -> str:
         """
         Create a temporary config file with the model name and optionally a custom API URL and key set.
         """
@@ -47,7 +45,7 @@ class GarakServer:
         List all available Garak attacks.
         """
         if self._cached_probes is not None:
-            return self._cached_probes, None
+            return self._cached_probes
         lines, _ = get_terminal_commands_output(['garak', '--list_probes'])
         self._cached_probes = (lines, None)
         return self._cached_probes

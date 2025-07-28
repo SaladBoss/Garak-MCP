@@ -1,0 +1,15 @@
+services:
+  garak-mcp-server:
+    image: garak-mcp-server
+    pull_policy: never
+    container_name: garak-mcp-server
+    build:
+      context: .
+      dockerfile: dev.Dockerfile
+    volumes:
+      # Hot reload
+      - "./src:/app/src"
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env

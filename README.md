@@ -53,30 +53,11 @@ https://github.com/user-attachments/assets/f6095d26-2b79-4ef7-a889-fd6be27bbbda
 
 ## Prerequisites
 
-1. **Python 3.11 or higher**: This project requires Python 3.11 or newer.
-   ```bash
-   # Check your Python version
-   python --version
-   ```
+- Docker
 
-**Note for Windows users**: If you encounter build errors with `sentencepiece` on Python 3.13, try using Python 3.11 or 3.12 instead, as they have better compatibility with compiled dependencies:
+### Optional: **Ollama**
 
-```bash 
-# Install and use Python 3.11 with uv
-uv python install 3.11
-uv venv --python 3.11
-uv sync
-```
-
-2. **Install uv**: A fast Python package installer and resolver.
-   ```bash
-   pip install uv
-   ```
-   Or use Homebrew:
-   ```bash
-   brew install uv
-   ```
-3. **Optional: Ollama**: If you want to run attacks on ollama models be sure that the ollama server is running.
+If you want to run attacks on ollama models be sure that the ollama server is running.
 
 ```bash
 ollama serve
@@ -88,17 +69,28 @@ ollama serve
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/BIGdeadLock/Garak-MCP.git
+git clone https://github.com/SaladBoss/Garak-MCP.git
 ```
-2. Configure your MCP Host (Claude Desktop, Cursor, etc): 
+
+2. Start the MCP server
+
+```bash
+docker compose up
+```
+
+3. Configure your MCP Host (Claude Desktop, Cursor, etc): 
 
 ```json
 {
   "mcpServers": {
     "garak-mcp": {
-      "command": "uv",
-      "args": ["--directory", "path-to/Garak-MCP", "run", "garak-server"],
-      "env": {}
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "http://localhost:5000/mcp",
+        "--transport",
+        "http-first"
+      ]
     }
   }
 }

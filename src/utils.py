@@ -1,13 +1,17 @@
+import re
 import requests
 import subprocess
 import os
 import logging
 
+ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+
 def sanitize_output(text: str) -> str:
     """
     Remove non-ASCII characters (including emojis) from a string.
     """
-    return ''.join(c for c in text if ord(c) < 128)
+    # return ''.join(c for c in text if ord(c) < 128)
+    return ansi_escape.sub('', text)
 
 def get_installed_ollama_models():
     """
@@ -33,6 +37,8 @@ def get_terminal_commands_output(command: list[str]):
     Returns:
         tuple: A tuple containing (output_lines, process_id)
     """
+    output_lines: list[str] = []
+
     try:
         # Print environment for debugging
         # print("[DEBUG] Environment variables before subprocess:")
@@ -53,7 +59,6 @@ def get_terminal_commands_output(command: list[str]):
         
         # Read all output at once to avoid deadlocks
         stdout, stderr = process.communicate()
-        output_lines = []
         if stdout:
             lines = [sanitize_output(line.strip()) for line in stdout.split('\n') if line.strip()]
             output_lines.extend(lines)
@@ -65,7 +70,7 @@ def get_terminal_commands_output(command: list[str]):
         return output_lines, process.pid
     except subprocess.SubprocessError as e:
         logging.error(f"Error running command {command}: {e}")
-        return [], None
+        return output_lines, None
 
 
 def generate_ollama_response(model: str, prompt: str) -> str:
