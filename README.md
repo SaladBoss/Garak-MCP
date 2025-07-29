@@ -78,6 +78,10 @@ git clone https://github.com/SaladBoss/Garak-MCP.git
 docker compose up
 ```
 
+**Recommended: GPU Support**
+
+To support running LLMs using your GPU from within the docker container, you have to ensure NVIDIA drivers are installed on your host, and that you have installed the [NVIDIA container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+
 3. Configure your MCP Host (Claude Desktop, Cursor, etc): 
 
 ```json

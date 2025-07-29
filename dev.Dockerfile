@@ -7,7 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # the application crashes without emitting any logs due to buffering.
 ENV PYTHONUNBUFFERED=1
 
-# Non-root user
+# Non-root user. Currently causing problems with voluming garak.log, not using
 ARG UID=10001
 RUN adduser \
     --disabled-password \
@@ -15,8 +15,6 @@ RUN adduser \
     --shell "/sbin/nologin" \
     --uid "${UID}" \
     appuser
-
-RUN mkdir /app && chown -R appuser:appuser /app
 
 WORKDIR /app
 
@@ -47,7 +45,5 @@ ENV VIRTUAL_ENV=/app/.venv \
 # Copy source code
 COPY ./src /app/src/
 
-# Run
-USER appuser
 WORKDIR /app/src
 CMD ["python", "-m", "main", "--host", "0.0.0.0"]

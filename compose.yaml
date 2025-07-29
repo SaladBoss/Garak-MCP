@@ -3,13 +3,14 @@ services:
     image: garak-mcp-server
     pull_policy: never
     container_name: garak-mcp-server
+    gpus: all
     build:
       context: .
       dockerfile: dev.Dockerfile
     volumes:
       # Logs
       - "./outputs/app-output:/app/output"
-      - "./outputs/garak:/home/appuser/.local/share/garak"
+      - "./outputs/garak:/root/.local/share/garak"
 
       # Hot reload
       - "./src:/app/src"

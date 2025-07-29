@@ -8,8 +8,9 @@ import tempfile
 import os
 
 REPORT_DIR = "/app/output"
+REPORT_PREFIX = os.path.join(REPORT_DIR, "output")
 
-os.makedirs(REPORT_DIR, exist_ok=True)
+os.makedirs(REPORT_PREFIX, exist_ok=True)
 
 class GarakServer:
     def __init__(self):
@@ -71,7 +72,7 @@ class GarakServer:
                     '--model_type', 'rest',
                     '--generator_option_file', config_file,
                     '--probes', probe_name,
-                    '--report_prefix', REPORT_DIR,
+                    '--report_prefix', REPORT_PREFIX,
                     "--generations", "1",
                     "--config", "fast",
                     "--parallel_attempts", str(self.config.parallel_attempts),
@@ -91,7 +92,7 @@ class GarakServer:
                     '--model_type', 'rest',
                     '--generator_option_file', config_file,
                     '--probes', probe_name,
-                    '--report_prefix', REPORT_DIR,
+                    '--report_prefix', REPORT_PREFIX,
                     "--generations", "1",
                     "--config", "fast",
                     "--parallel_attempts", str(self.config.parallel_attempts),
@@ -106,7 +107,7 @@ class GarakServer:
                 '--model_type', model_type,
                 '--model_name', model_name,
                 '--probes', probe_name,
-                '--report_prefix', REPORT_DIR,
+                '--report_prefix', REPORT_PREFIX,
                 "--generations", "1",
                 "--config", "fast",
                 "--parallel_attempts", str(self.config.parallel_attempts),
@@ -165,7 +166,7 @@ def get_report():
     Returns:
         str: The path to the report file.
     """
-    return Path(REPORT_DIR, 'output.report.jsonl').absolute()
+    return Path(REPORT_PREFIX, 'output.report.jsonl').absolute()
 
 @mcp.tool()
 def run_attack(model_type: str, model_name: str, probe_name: str):
