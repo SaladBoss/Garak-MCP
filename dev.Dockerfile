@@ -12,11 +12,11 @@ ARG UID=10001
 RUN adduser \
     --disabled-password \
     --gecos "" \
-    --home "/nonexistent" \
     --shell "/sbin/nologin" \
-    --no-create-home \
     --uid "${UID}" \
     appuser
+
+RUN mkdir /app && chown -R appuser:appuser /app
 
 WORKDIR /app
 
@@ -32,7 +32,6 @@ COPY ./pyproject.toml \
 ENV UV_PROJECT_ENVIRONMENT=/app/.venv
 # To suppress warnings from uv attempting to use hardlinks
 ENV UV_LINK_MODE=copy
-WORKDIR /app
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project
@@ -49,6 +48,6 @@ ENV VIRTUAL_ENV=/app/.venv \
 COPY ./src /app/src/
 
 # Run
-# USER appuser
+USER appuser
 WORKDIR /app/src
 CMD ["python", "-m", "main", "--host", "0.0.0.0"]

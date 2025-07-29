@@ -7,6 +7,10 @@ services:
       context: .
       dockerfile: dev.Dockerfile
     volumes:
+      # Logs
+      - "./outputs/app-output:/app/output"
+      - "./outputs/garak:/home/appuser/.local/share/garak"
+
       # Hot reload
       - "./src:/app/src"
     ports:

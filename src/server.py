@@ -1,4 +1,5 @@
 from mcp.server.fastmcp import FastMCP
+from pathlib import Path
 import requests
 from utils import get_terminal_commands_output
 from config import ModelConfig
@@ -6,9 +7,9 @@ import json
 import tempfile
 import os
 
-REPORT_PREFIX = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "output")), "output")
+REPORT_DIR = "/app/output"
 
-os.makedirs(REPORT_PREFIX, exist_ok=True)
+os.makedirs(REPORT_DIR, exist_ok=True)
 
 class GarakServer:
     def __init__(self):
@@ -70,7 +71,7 @@ class GarakServer:
                     '--model_type', 'rest',
                     '--generator_option_file', config_file,
                     '--probes', probe_name,
-                    '--report_prefix', REPORT_PREFIX,
+                    '--report_prefix', REPORT_DIR,
                     "--generations", "1",
                     "--config", "fast",
                     "--parallel_attempts", str(self.config.parallel_attempts),
@@ -90,7 +91,7 @@ class GarakServer:
                     '--model_type', 'rest',
                     '--generator_option_file', config_file,
                     '--probes', probe_name,
-                    '--report_prefix', REPORT_PREFIX,
+                    '--report_prefix', REPORT_DIR,
                     "--generations", "1",
                     "--config", "fast",
                     "--parallel_attempts", str(self.config.parallel_attempts),
@@ -105,7 +106,7 @@ class GarakServer:
                 '--model_type', model_type,
                 '--model_name', model_name,
                 '--probes', probe_name,
-                '--report_prefix', REPORT_PREFIX,
+                '--report_prefix', REPORT_DIR,
                 "--generations", "1",
                 "--config", "fast",
                 "--parallel_attempts", str(self.config.parallel_attempts),
@@ -164,7 +165,7 @@ def get_report():
     Returns:
         str: The path to the report file.
     """
-    return os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output', 'output.report.jsonl')
+    return Path(REPORT_DIR, 'output.report.jsonl').absolute()
 
 @mcp.tool()
 def run_attack(model_type: str, model_name: str, probe_name: str):
