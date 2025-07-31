@@ -8,7 +8,7 @@ import tempfile
 import os
 
 REPORT_DIR = "/app/output"
-REPORT_PREFIX = f"{REPORT_DIR}/output."
+REPORT_PREFIX = f"{REPORT_DIR}/output"
 
 os.makedirs(REPORT_DIR, exist_ok=True)
 
@@ -24,19 +24,31 @@ class GarakServer:
         self.config = ModelConfig()
         self._cached_probes = None
 
-    def _get_generator_options_file(self, model_name: str, api_url: str | None = None, api_key: str | None = None) -> str:
+    def _get_generator_options_file(self, model_name: str, api_url: str | None = None, api_key: str | None = None, model_type: str = "ollama") -> str:
         """
         Create a temporary config file with the model name and optionally a custom API URL and key set.
         """
         import json, tempfile, os
-        config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'ollama.json')
+        
+        # Choose the appropriate base config file
+        if model_type == "custom_rest" and api_url and "4000" in api_url:  # LiteLLM typically runs on 4000
+            base_config = "litellm.json"
+        else:
+            base_config = "ollama.json"
+            
+        config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', base_config)
         with open(config_path, 'r') as f:
             config = json.load(f)
+        
         config['rest']['RestGenerator']['req_template_json_object']['model'] = model_name
         if api_url:
             config['rest']['RestGenerator']['uri'] = api_url
         if api_key:
             config['rest']['RestGenerator']['headers'] = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+        
+        # For LiteLLM, the response_json_field is already set in the config file
+        # No additional processing needed here
+        
         temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
         json.dump(config, temp_file)
         temp_file.close()
@@ -85,9 +97,9 @@ class GarakServer:
         elif model_type == "custom_rest":
             api_url = self.config.custom_rest_api_url
             api_key = self.config.custom_rest_api_key
-            config_file = self._get_generator_options_file(model_name, api_url=api_url, api_key=api_key)
+            config_file = self._get_generator_options_file(model_name, api_url=api_url, api_key=api_key, model_type="custom_rest")
             try:
-                return get_terminal_commands_output([
+                garak_command = [
                     'garak',
                     '--model_type', 'rest',
                     '--generator_option_file', config_file,
@@ -97,7 +109,10 @@ class GarakServer:
                     "--config", "fast",
                     "--parallel_attempts", str(self.config.parallel_attempts),
                     "-v"
-                ])
+                ]
+                import logging
+                logging.info(f"Running Garak command: {' '.join(garak_command)}")
+                return get_terminal_commands_output(garak_command)
             finally:
                 if os.path.exists(config_file):
                     os.unlink(config_file)
@@ -164,7 +179,7 @@ def get_report():
     Get the report of the last run.
 
     Returns:
-        str: The path to the report file.
+        str: The contents of the report file.
     """
     import os
     import glob
@@ -174,16 +189,28 @@ def get_report():
     jsonl_files = glob.glob(os.path.join(REPORT_DIR, "*.jsonl"))
     
     if jsonl_files:
-        # Return the most recent file
+        # Get the most recent file
         latest_file = max(jsonl_files, key=os.path.getctime)
         logging.info(f"Latest report file found: {latest_file}")
-        return Path(latest_file).absolute()
+        try:
+            with open(latest_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return content
+        except Exception as e:
+            logging.error(f"Error reading report file {latest_file}: {e}")
+            return f"Error reading report file: {e}"
     else:
         # Fallback to the expected name
         expected_file = Path(REPORT_DIR, 'output.report.jsonl')
         if expected_file.exists():
             logging.info(f"Fallback report file found: {expected_file}")
-            return expected_file.absolute()
+            try:
+                with open(expected_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                return content
+            except Exception as e:
+                logging.error(f"Error reading fallback report file {expected_file}: {e}")
+                return f"Error reading fallback report file: {e}"
         else:
             # Check what files actually exist in the output directory
             all_files = []
@@ -206,4 +233,19 @@ def run_attack(model_type: str, model_name: str, probe_name: str):
     Returns:
         list: A list of vulnerabilities.
     """
-    return GarakServer().run_attack(model_type, model_name, probe_name)
+    import time
+    import logging
+    
+    start_time = time.time()
+    logging.info(f"Starting attack: {model_type}/{model_name} with probe {probe_name}")
+    
+    try:
+        result = GarakServer().run_attack(model_type, model_name, probe_name)
+        end_time = time.time()
+        logging.info(f"Attack completed in {end_time - start_time:.2f} seconds")
+        logging.info(f"Result: {result}")
+        return result
+    except Exception as e:
+        end_time = time.time()
+        logging.error(f"Attack failed after {end_time - start_time:.2f} seconds: {e}")
+        raise
