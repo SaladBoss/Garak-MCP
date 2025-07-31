@@ -40,14 +40,9 @@ def get_terminal_commands_output(command: list[str]):
     output_lines: list[str] = []
 
     try:
-        # Print environment for debugging
-        # print("[DEBUG] Environment variables before subprocess:")
-        # for k, v in os.environ.items():
-        #     print(f"{k}={v}")
         # Use shell=True for Windows compatibility
         process = subprocess.Popen(
             " ".join(command),
-            # command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
