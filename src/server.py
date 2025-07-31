@@ -8,9 +8,9 @@ import tempfile
 import os
 
 REPORT_DIR = "/app/output"
-REPORT_PREFIX = REPORT_DIR
+REPORT_PREFIX = f"{REPORT_DIR}/output."
 
-os.makedirs(REPORT_PREFIX, exist_ok=True)
+os.makedirs(REPORT_DIR, exist_ok=True)
 
 class GarakServer:
     def __init__(self):
