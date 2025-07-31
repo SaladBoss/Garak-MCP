@@ -171,7 +171,7 @@ def get_report():
     import logging
 
     # Look for any .jsonl files in the output directory
-    jsonl_files = glob.glob(os.path.join(REPORT_PREFIX, "*.jsonl"))
+    jsonl_files = glob.glob(os.path.join(REPORT_DIR, "*.jsonl"))
     
     if jsonl_files:
         # Return the most recent file
@@ -180,18 +180,18 @@ def get_report():
         return Path(latest_file).absolute()
     else:
         # Fallback to the expected name
-        expected_file = Path(REPORT_PREFIX, 'output.report.jsonl')
+        expected_file = Path(REPORT_DIR, 'output.report.jsonl')
         if expected_file.exists():
             logging.info(f"Fallback report file found: {expected_file}")
             return expected_file.absolute()
         else:
             # Check what files actually exist in the output directory
             all_files = []
-            if os.path.exists(REPORT_PREFIX):
-                all_files = os.listdir(REPORT_PREFIX)
+            if os.path.exists(REPORT_DIR):
+                all_files = os.listdir(REPORT_DIR)
             
-            logging.warning(f"No report files found in {REPORT_PREFIX}. Available files: {all_files}")
-            return f"No report files found in {REPORT_PREFIX}. Available files: {all_files}"
+            logging.warning(f"No report files found in {REPORT_DIR}. Available files: {all_files}")
+            return f"No report files found in {REPORT_DIR}. Available files: {all_files}"
 
 @mcp.tool()
 def run_attack(model_type: str, model_name: str, probe_name: str):
