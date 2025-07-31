@@ -179,7 +179,7 @@ def get_report():
     Get the report of the last run.
 
     Returns:
-        str: The contents of the report file.
+        str: The path of the report file.
     """
     import os
     import glob
@@ -192,33 +192,13 @@ def get_report():
         # Get the most recent file
         latest_file = max(jsonl_files, key=os.path.getctime)
         logging.info(f"Latest report file found: {latest_file}")
-        try:
-            with open(latest_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-            return content
-        except Exception as e:
-            logging.error(f"Error reading report file {latest_file}: {e}")
-            return f"Error reading report file: {e}"
+        return Path(latest_file).absolute()
     else:
         # Fallback to the expected name
         expected_file = Path(REPORT_DIR, 'output.report.jsonl')
         if expected_file.exists():
             logging.info(f"Fallback report file found: {expected_file}")
-            try:
-                with open(expected_file, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                return content
-            except Exception as e:
-                logging.error(f"Error reading fallback report file {expected_file}: {e}")
-                return f"Error reading fallback report file: {e}"
-        else:
-            # Check what files actually exist in the output directory
-            all_files = []
-            if os.path.exists(REPORT_DIR):
-                all_files = os.listdir(REPORT_DIR)
-            
-            logging.warning(f"No report files found in {REPORT_DIR}. Available files: {all_files}")
-            return f"No report files found in {REPORT_DIR}. Available files: {all_files}"
+            return expected_file.absolute()
 
 @mcp.tool()
 def run_attack(model_type: str, model_name: str, probe_name: str):
