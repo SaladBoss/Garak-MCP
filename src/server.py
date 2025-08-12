@@ -1,8 +1,8 @@
 from mcp.server.fastmcp import FastMCP
 from pathlib import Path
 import requests
-from utils import get_terminal_commands_output
-from config import ModelConfig
+from src.utils import get_terminal_commands_output
+from src.config import ModelConfig
 import json
 import tempfile
 import os

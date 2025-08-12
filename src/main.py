@@ -1,7 +1,7 @@
 import asyncio
 import os
 import uvicorn
-from server import mcp
+from src.server import mcp
 
 app = mcp.streamable_http_app()
 
