@@ -1,0 +1,25 @@
+{
+    "rest": {
+        "RestGenerator": {
+            "name": "LiteLLM API",
+            "uri": "http://localhost:4000/v1/chat/completions",
+            "method": "post",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "req_template_json_object": {
+                "model": "{model_name}",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "$INPUT"
+                    }
+                ],
+                "stream": false
+            },
+            "response_json": true,
+            "response_json_field": "choices[0].message.content",
+            "request_timeout": 90
+        }
+    }
+} 
