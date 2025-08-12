@@ -18,8 +18,8 @@ https://github.com/user-attachments/assets/f6095d26-2b79-4ef7-a889-fd6be27bbbda
 | list_model_types | List all available model types (ollama, openai, huggingface, ggml, custom_rest) |
 | list_models | List all available models for a given model type |
 | list_garak_probes | List all available Garak attacks/probes |
-| get_report | Get the report of the last run |
 | run_attack | Run an attack with a given model and probe |
+| get_report | Get the directory for the report of the last run |
 
 ### Detailed Description
 
@@ -38,7 +38,7 @@ https://github.com/user-attachments/assets/f6095d26-2b79-4ef7-a889-fd6be27bbbda
   - Returns a list of available probes/attacks that can be run
 
 - **get_report**
-  - Get the report of the last run
+  - Get the report of the last run (WIP)
   - Returns the path to the report file
 
 - **run_attack**
@@ -53,7 +53,26 @@ https://github.com/user-attachments/assets/f6095d26-2b79-4ef7-a889-fd6be27bbbda
 
 ## Prerequisites
 
-- Docker
+
+1. **Python 3.11 or higher**: This project requires Python 3.11 or newer.
+   ```bash
+   # Check your Python version
+   python --version
+   ```
+
+2. **Install uv**: A fast Python package installer and resolver.
+   ```bash
+   pip install uv
+   ```
+   Or use Homebrew:
+   ```bash
+   brew install uv
+   ```
+3. **Docker** (Recomended)
+    ```bash
+    ### Scroll down to your specefic OS
+    https://docs.docker.com/desktop/
+    ```
 
 ### Optional: **Ollama**
 
@@ -68,15 +87,25 @@ ollama serve
 ## Installation
 
 1. Clone this repository:
-```bash
-git clone https://github.com/SaladBoss/Garak-MCP.git
-```
+    ```bash
+    git clone https://github.com/SaladBoss/Garak-MCP.git
+    cd Garak-MCP
+    ```
+    1.1 Install packages if running on host:
+    ```bash
+    uv python install 3.11
+    uv venv --python 3.11
+    uv sync
+    ```
 
 2. Start the MCP server
-
-```bash
-docker compose up
-```
+    ```bash
+    docker compose up
+    ```
+    OR
+    ```bash
+    python src/main.py
+    ```
 
 **Recommended: GPU Support**
 
@@ -134,9 +163,9 @@ Tested on:
 ---
 ## Future Steps
 
-- [ ] Add support for Smithery AI: Docker and config
 - [ ] Improve Reporting
 - [ ] Test and validate OpenAI models (GPT-3.5, GPT-4)
 - [ ] Test and validate HuggingFace models
 - [ ] Test and validate local GGML models
 - [ ] Test and validate custom REST endpoints (LiteLLM, vLLM, etc.)
+- [ ] Add support for Smithery AI: Docker and config
