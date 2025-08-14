@@ -7,8 +7,8 @@ import json
 import tempfile
 import os
 
-REPORT_DIR = "/app/output"
-REPORT_PREFIX = f"{REPORT_DIR}/output"
+REPORT_DIR = "./outputs"
+REPORT_PREFIX = f"{REPORT_DIR}"
 
 os.makedirs(REPORT_DIR, exist_ok=True)
 
@@ -19,7 +19,7 @@ class GarakServer:
             "huggingface": "huggingface",
             "openai": "openai",
             "ggml": "ggml",
-            "custom_rest": "rest"
+            "openai_like": "rest"
         }
         self.config = ModelConfig()
         self._cached_probes = None
@@ -30,24 +30,44 @@ class GarakServer:
         """
         import json, tempfile, os
         
-        # Choose the appropriate base config file
-        if model_type == "custom_rest" and api_url and "4000" in api_url:  # LiteLLM typically runs on 4000
-            base_config = "litellm.json"
-        else:
-            base_config = "ollama.json"
+        # Choose the appropriate base config file and endpoints
+        if model_type == "openai_like":
+            # For OpenAI-like REST, determine endpoints based on the base URL
+            base_url = api_url
+            endpoints = self.config.get_openai_like_endpoints(base_url)
             
-        config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', base_config)
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-        
-        config['rest']['RestGenerator']['req_template_json_object']['model'] = model_name
-        if api_url:
-            config['rest']['RestGenerator']['uri'] = api_url
-        if api_key:
-            config['rest']['RestGenerator']['headers'] = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-        
-        # For LiteLLM, the response_json_field is already set in the config file
-        # No additional processing needed here
+            # Use OpenAI-compatible config as base for OpenAI-like REST
+            base_config = "litellm.json"
+            config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', base_config)
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+            
+            # Update the URI with the full endpoint
+            full_url = base_url.rstrip("/") + endpoints["generate"]
+            config['rest']['RestGenerator']['uri'] = full_url
+            
+            # Update the model name
+            config['rest']['RestGenerator']['req_template_json_object']['model'] = model_name
+            
+            # Set the appropriate response_json_field based on API type
+            response_field = self.config.get_response_json_field(base_url)
+            config['rest']['RestGenerator']['response_json_field'] = response_field
+            
+            # Add API key if provided
+            if api_key:
+                config['rest']['RestGenerator']['headers']["Authorization"] = f"Bearer {api_key}"
+        else:
+            # For Ollama, use the existing logic
+            base_config = "ollama.json"
+            config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', base_config)
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+            
+            config['rest']['RestGenerator']['req_template_json_object']['model'] = model_name
+            if api_url:
+                config['rest']['RestGenerator']['uri'] = api_url
+            if api_key:
+                config['rest']['RestGenerator']['headers']["Authorization"] = f"Bearer {api_key}"
         
         temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
         json.dump(config, temp_file)
@@ -94,10 +114,10 @@ class GarakServer:
                 # Clean up the temporary file
                 if os.path.exists(config_file):
                     os.unlink(config_file)
-        elif model_type == "custom_rest":
-            api_url = self.config.custom_rest_api_url
-            api_key = self.config.custom_rest_api_key
-            config_file = self._get_generator_options_file(model_name, api_url=api_url, api_key=api_key, model_type="custom_rest")
+        elif model_type == "openai_like":
+            base_url = self.config.openai_like_base_url
+            api_key = self.config.openai_like_api_key
+            config_file = self._get_generator_options_file(model_name, api_url=base_url, api_key=api_key, model_type="openai_like")
             try:
                 garak_command = [
                     'garak',
@@ -149,7 +169,7 @@ def list_models(model_type: str) -> list[str]:
     Those models can be used for the attack and target models.
 
     Args:
-        model_type (str): The type of model to list (ollama, openai, huggingface, ggml)
+        model_type (str): The type of model to list (ollama, openai, huggingface, ggml, openai_like)
 
     Returns:
         list[str]: A list of available models.

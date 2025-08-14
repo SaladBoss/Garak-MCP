@@ -18,7 +18,7 @@
                 "stream": false
             },
             "response_json": true,
-            "response_json_field": "choices[0].message.content",
+            "response_json_field": "choices",
             "request_timeout": 90
         }
     }

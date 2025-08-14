@@ -44,6 +44,8 @@ ENV VIRTUAL_ENV=/app/.venv \
 
 # Copy source code
 COPY ./src /app/src/
+COPY ./config /app/config/
 
-WORKDIR /app/src
-CMD ["python", "-m", "main", "--host", "0.0.0.0"]
+# Keep working directory as /app so that src module can be found
+WORKDIR /app
+CMD ["python", "-m", "src.main", "--host", "0.0.0.0"]
